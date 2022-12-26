@@ -164,11 +164,11 @@ fn main() {
     };
     let room1 = Room {
         name: "Room 1".to_string(),
-        devices: vec!["socket_1".to_string(), "socket_2".to_string()]
+        devices: vec!["socket_1".to_string(), "socket_2".to_string()],
     };
     let room2 = Room {
         name: "Room 2".to_string(),
-        devices: vec!["thermo".to_string(), "socket_2".to_string()]
+        devices: vec!["thermo".to_string(), "socket_2".to_string()],
     };
 
     let mut house = SmartHome::new();
