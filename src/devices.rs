@@ -10,7 +10,7 @@ pub enum SmartSocketState {
 }
 
 pub struct SmartSocket {
-    state: SmartSocketState,
+    pub state: SmartSocketState,
     pub name: String,
 }
 
@@ -31,8 +31,8 @@ impl SmartSocket {
 }
 
 pub struct SmartThermometer {
-    name: String,
-    temperature: String,
+    pub name: String,
+    pub temperature: String,
 }
 
 impl Devices for SmartSocket {

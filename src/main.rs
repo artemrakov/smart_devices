@@ -15,8 +15,7 @@ impl Room {
         self.name.as_ref()
     }
 
-    fn add_device(mut self, device: String) {
-        // ????
+    fn add_device(&mut self, device: String) {
         let same_device = self.devices.iter().find(|&dev| *dev == device);
 
         if let None = same_device {
@@ -42,7 +41,7 @@ impl SmartHome {
         }
     }
 
-    fn add_room(mut self, room: Room) {
+    fn add_room(&mut self, room: Room) {
         let same_room = self.get_rooms().iter().find(|r| r.name == room.name);
 
         if let None = same_room {
@@ -84,14 +83,18 @@ impl SmartHome {
             report.push(provider.get_info(room.get_name(), device))
         });
 
+        let mut result = vec![format!("Finding report of {}", &self.description)];
+
         // check if all required_devices are found
-        device_report.values().for_each(|report| {
-            if report.len() == 0 {
+        device_report.drain().for_each(|(_, mut value)| {
+            if value.len() == 0 {
                 panic!("Device not found")
             }
+
+            result.append(&mut value)
         });
 
-        format!("Finding report of {}", &self.description)
+        result.join("\n")
     }
 }
 
@@ -140,7 +143,7 @@ fn extract_info(room: &str, device: &str, devices: HashMap<&str, &dyn Devices>) 
     let maybe_device = devices.get(device);
 
     if let Some(dev) = maybe_device {
-        format!("Room: {}, Device: {}", room, dev.report())
+        format!("Room: {}, Device {}", room, dev.report())
     } else {
         String::from("")
     }
@@ -148,19 +151,29 @@ fn extract_info(room: &str, device: &str, devices: HashMap<&str, &dyn Devices>) 
 
 fn main() {
     let socket1 = SmartSocket {
-        name: String::from("Socket 1"),
+        name: String::from("socket_1"),
         state: SmartSocketState::On,
     };
     let socket2 = SmartSocket {
-        name: String::from("Socket 2"),
+        name: String::from("socket_2"),
         state: SmartSocketState::Off,
     };
     let thermo = SmartThermometer {
-        name: String::from("Thermo"),
+        name: String::from("thermo"),
         temperature: String::from("27.0"),
     };
+    let room1 = Room {
+        name: "Room 1".to_string(),
+        devices: vec!["socket_1".to_string(), "socket_2".to_string()]
+    };
+    let room2 = Room {
+        name: "Room 2".to_string(),
+        devices: vec!["thermo".to_string(), "socket_2".to_string()]
+    };
 
-    let house = SmartHome::new();
+    let mut house = SmartHome::new();
+    house.add_room(room1);
+    house.add_room(room2);
 
     let info_provider_1 = OwningDeviceInfoProvider { socket: socket1 };
     let report1 = house.create_report(&info_provider_1);
