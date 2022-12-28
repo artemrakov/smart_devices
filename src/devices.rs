@@ -10,29 +10,25 @@ pub enum SmartSocketState {
 }
 
 pub struct SmartSocket {
-    pub state: SmartSocketState,
-    pub name: String,
+    state: SmartSocketState,
+    name: String,
 }
 
 impl SmartSocket {
-    fn _turn_on(self) -> Self {
-        SmartSocket {
-            state: SmartSocketState::On,
-            ..self
-        }
-    }
-
-    fn _turn_off(self) -> Self {
-        SmartSocket {
-            state: SmartSocketState::Off,
-            ..self
-        }
+    pub fn new(name: String, state: SmartSocketState) -> Self {
+        SmartSocket { name, state }
     }
 }
 
 pub struct SmartThermometer {
-    pub name: String,
-    pub temperature: String,
+    name: String,
+    temperature: String,
+}
+
+impl SmartThermometer {
+    pub fn new(name: String, temperature: String) -> Self {
+        SmartThermometer { name, temperature }
+    }
 }
 
 impl Devices for SmartSocket {
@@ -47,7 +43,10 @@ impl Devices for SmartSocket {
 
 impl Devices for SmartThermometer {
     fn report(&self) -> String {
-        format!("Thermometer: {} and temperature is {}", self.name, self.temperature)
+        format!(
+            "Thermometer: {} and temperature is {}",
+            self.name, self.temperature
+        )
     }
 
     fn get_name(&self) -> &str {
