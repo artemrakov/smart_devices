@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub struct Room {
     devices: Vec<String>,
     name: String,
@@ -22,5 +23,36 @@ impl Room {
 
     pub fn get_devices(&self) -> &Vec<String> {
         self.devices.as_ref()
+    }
+}
+
+impl PartialEq for Room {
+    fn eq(&self, other: &Self) -> bool {
+        self.get_name() == other.get_name()
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn can_add_devise() {
+        let mut room = Room::new(String::from("room"), Vec::new());
+        let device_name = String::from("device");
+
+        room.add_device(device_name);
+
+        assert_eq!(room.get_devices(), &vec![String::from("device")]);
+    }
+
+    #[test]
+    fn cannot_add_same_device() {
+        let mut room = Room::new(String::from("room"), Vec::new());
+
+        room.add_device(String::from("device"));
+        room.add_device(String::from("device"));
+
+        assert_eq!(room.get_devices().len(), 1);
     }
 }

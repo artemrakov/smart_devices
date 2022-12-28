@@ -53,3 +53,43 @@ fn extract_info(room: &str, device: &str, devices: HashMap<&str, &dyn Devices>) 
         String::from("")
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::devices::SmartSocketState;
+
+    #[test]
+    fn create_report_for_owning_device() {
+        let socket1 = SmartSocket::new(String::from("socket_1"), SmartSocketState::On);
+        let info_provider = OwningDeviceInfoProvider { socket: socket1 };
+
+        let report = info_provider.get_info("room", "socket_1");
+        assert!(report.contains("Room: room, Device Socket: socket_1"));
+    }
+
+    #[test]
+    fn create_report_for_borrowing_device() {
+        let socket1 = SmartSocket::new(String::from("socket_1"), SmartSocketState::On);
+        let thermo = SmartThermometer::new(String::from("thermo"), String::from("27.6"));
+        let info_provider = BorrowingDeviceInfoProvider {
+            socket: &socket1,
+            thermo: &thermo,
+        };
+
+        let info1 = info_provider.get_info("room", "socket_1");
+        let info2 = info_provider.get_info("room", "thermo");
+
+        assert!(info1.contains("Room: room, Device Socket: socket_1"));
+        assert!(info2.contains("Room: room, Device Thermometer: thermo"));
+    }
+
+    #[test]
+    fn do_not_return_report_if_device_is_not_found() {
+        let socket1 = SmartSocket::new(String::from("socket_1"), SmartSocketState::On);
+        let info_provider = OwningDeviceInfoProvider { socket: socket1 };
+
+        let info = info_provider.get_info("room", "not_found");
+        assert_eq!(info, "");
+    }
+}
