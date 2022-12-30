@@ -1,11 +1,13 @@
+use std::collections::HashSet;
+
 #[derive(Debug)]
 pub struct Room {
-    devices: Vec<String>,
+    devices: HashSet<String>,
     name: String,
 }
 
 impl Room {
-    pub fn new(name: String, devices: Vec<String>) -> Self {
+    pub fn new(name: String, devices: HashSet<String>) -> Self {
         Room { devices, name }
     }
 
@@ -14,15 +16,13 @@ impl Room {
     }
 
     pub fn add_device(&mut self, device: String) {
-        let same_device = self.devices.iter().find(|&dev| *dev == device);
-
-        if let None = same_device {
-            self.devices.push(device)
+        if !self.devices.contains(&device) {
+            self.devices.insert(device);
         }
     }
 
-    pub fn get_devices(&self) -> &Vec<String> {
-        self.devices.as_ref()
+    pub fn get_devices(&self) -> &HashSet<String> {
+        &self.devices
     }
 }
 
@@ -38,17 +38,17 @@ mod test {
 
     #[test]
     fn can_add_devise() {
-        let mut room = Room::new(String::from("room"), Vec::new());
+        let mut room = Room::new(String::from("room"), HashSet::new());
         let device_name = String::from("device");
 
         room.add_device(device_name);
 
-        assert_eq!(room.get_devices(), &vec![String::from("device")]);
+        assert!(room.get_devices().contains("device"));
     }
 
     #[test]
     fn cannot_add_same_device() {
-        let mut room = Room::new(String::from("room"), Vec::new());
+        let mut room = Room::new(String::from("room"), HashSet::new());
 
         room.add_device(String::from("device"));
         room.add_device(String::from("device"));
