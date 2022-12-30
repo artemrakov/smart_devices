@@ -1,8 +1,8 @@
-mod devices;
+mod device;
 mod house;
 mod provider;
 
-use devices::{SmartSocket, SmartSocketState, SmartThermometer};
+use device::{SmartSocket, SmartSocketState, SmartThermometer};
 use house::room::Room;
 use house::SmartHome;
 use provider::{BorrowingDeviceInfoProvider, OwningDeviceInfoProvider};

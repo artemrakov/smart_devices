@@ -1,4 +1,4 @@
-pub trait Devices {
+pub trait Device {
     fn get_name(&self) -> &str;
     fn report(&self) -> String;
 }
@@ -31,7 +31,7 @@ impl SmartThermometer {
     }
 }
 
-impl Devices for SmartSocket {
+impl Device for SmartSocket {
     fn report(&self) -> String {
         format!("Socket: {} and state is {:?}", self.name, self.state)
     }
@@ -41,7 +41,7 @@ impl Devices for SmartSocket {
     }
 }
 
-impl Devices for SmartThermometer {
+impl Device for SmartThermometer {
     fn report(&self) -> String {
         format!(
             "Thermometer: {} and temperature is {}",

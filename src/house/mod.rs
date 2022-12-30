@@ -85,7 +85,10 @@ impl SmartHome {
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::{devices::{SmartSocket, SmartSocketState}, provider::OwningDeviceInfoProvider};
+    use crate::{
+        device::{SmartSocket, SmartSocketState},
+        provider::OwningDeviceInfoProvider,
+    };
 
     #[test]
     fn can_add_room() {
@@ -135,13 +138,10 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected="Device not found")]
+    #[should_panic(expected = "Device not found")]
     fn device_not_found() {
         let socket1 = SmartSocket::new(String::from("socket_1"), SmartSocketState::On);
-        let room1 = Room::new(
-            "Room 1".to_string(),
-            vec![],
-        );
+        let room1 = Room::new("Room 1".to_string(), vec![]);
         let mut house = SmartHome::new("House :)".to_string());
         house.add_room(room1);
         let info_provider_1 = OwningDeviceInfoProvider { socket: socket1 };

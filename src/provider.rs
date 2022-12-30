@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use crate::devices::{Devices, SmartSocket, SmartThermometer};
+use crate::device::{Device, SmartSocket, SmartThermometer};
 
 pub trait DeviceInfoProvider {
     fn get_info(&self, room: &str, device: &str) -> String;
-    fn required_devices(&self) -> Vec<&dyn Devices>;
+    fn required_devices(&self) -> Vec<&dyn Device>;
 }
 
 pub struct OwningDeviceInfoProvider {
@@ -17,13 +17,13 @@ pub struct BorrowingDeviceInfoProvider<'a, 'b> {
 }
 
 impl DeviceInfoProvider for OwningDeviceInfoProvider {
-    fn required_devices(&self) -> Vec<&dyn Devices> {
+    fn required_devices(&self) -> Vec<&dyn Device> {
         vec![&self.socket]
     }
 
     fn get_info(&self, room: &str, device: &str) -> String {
-        let devices: HashMap<&str, &dyn Devices> =
-            HashMap::from([(self.socket.get_name(), &self.socket as &dyn Devices)]);
+        let devices: HashMap<&str, &dyn Device> =
+            HashMap::from([(self.socket.get_name(), &self.socket as &dyn Device)]);
 
         extract_info(room, device, devices)
     }
@@ -31,20 +31,20 @@ impl DeviceInfoProvider for OwningDeviceInfoProvider {
 
 impl<'a, 'b> DeviceInfoProvider for BorrowingDeviceInfoProvider<'a, 'b> {
     fn get_info(&self, room: &str, device: &str) -> String {
-        let devices: HashMap<&str, &dyn Devices> = HashMap::from([
-            (self.socket.get_name(), self.socket as &dyn Devices),
-            (self.thermo.get_name(), self.thermo as &dyn Devices),
+        let devices: HashMap<&str, &dyn Device> = HashMap::from([
+            (self.socket.get_name(), self.socket as &dyn Device),
+            (self.thermo.get_name(), self.thermo as &dyn Device),
         ]);
 
         extract_info(room, device, devices)
     }
 
-    fn required_devices(&self) -> Vec<&dyn Devices> {
+    fn required_devices(&self) -> Vec<&dyn Device> {
         vec![self.socket, self.thermo]
     }
 }
 
-fn extract_info(room: &str, device: &str, devices: HashMap<&str, &dyn Devices>) -> String {
+fn extract_info(room: &str, device: &str, devices: HashMap<&str, &dyn Device>) -> String {
     let maybe_device = devices.get(device);
 
     if let Some(dev) = maybe_device {
@@ -57,7 +57,7 @@ fn extract_info(room: &str, device: &str, devices: HashMap<&str, &dyn Devices>) 
 #[cfg(test)]
 mod test {
     use super::*;
-    use crate::devices::SmartSocketState;
+    use crate::device::SmartSocketState;
 
     #[test]
     fn create_report_for_owning_device() {
