@@ -38,7 +38,7 @@ impl SmartHome {
             .iter()
             .map(|device| (device.get_name(), Vec::new()))
             .collect();
-        let mut device_report: HashMap<&str, Vec<String>> = tuples.into_iter().collect();
+        let mut device_report: HashMap<&str, Vec<String>> = HashMap::from_iter(tuples);
 
         let room_devices: Vec<(&Room, &str)> = self
             .get_rooms()
@@ -61,7 +61,7 @@ impl SmartHome {
 
         // check if all required_devices are found
         device_report.drain().for_each(|(_, mut value)| {
-            if value.len() == 0 {
+            if value.is_empty() {
                 panic!("Device not found")
             }
 
