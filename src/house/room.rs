@@ -15,10 +15,14 @@ impl Room {
         self.name.as_ref()
     }
 
-    pub fn add_device(&mut self, device: String) {
+    pub fn add_device(&mut self, device: String) -> Option<bool> {
         if !self.devices.contains(&device) {
             self.devices.insert(device);
+
+            return Some(true);
         }
+
+        None
     }
 
     pub fn get_devices(&self) -> &HashSet<String> {

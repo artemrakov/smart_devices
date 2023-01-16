@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use crate::device::{Device, SmartSocket, SmartThermometer};
 
 pub trait DeviceInfoProvider {
-    fn get_info(&self, room: &str, device: &str) -> String;
+    fn get_info(&self, room: &str, device: &str) -> Option<String>;
     fn required_devices(&self) -> Vec<&dyn Device>;
 }
 
@@ -21,7 +21,7 @@ impl DeviceInfoProvider for OwningDeviceInfoProvider {
         vec![&self.socket]
     }
 
-    fn get_info(&self, room: &str, device: &str) -> String {
+    fn get_info(&self, room: &str, device: &str) -> Option<String> {
         let devices: HashMap<&str, &dyn Device> =
             HashMap::from([(self.socket.get_name(), &self.socket as &dyn Device)]);
 
@@ -30,7 +30,7 @@ impl DeviceInfoProvider for OwningDeviceInfoProvider {
 }
 
 impl<'a, 'b> DeviceInfoProvider for BorrowingDeviceInfoProvider<'a, 'b> {
-    fn get_info(&self, room: &str, device: &str) -> String {
+    fn get_info(&self, room: &str, device: &str) -> Option<String> {
         let devices: HashMap<&str, &dyn Device> = HashMap::from([
             (self.socket.get_name(), self.socket as &dyn Device),
             (self.thermo.get_name(), self.thermo as &dyn Device),
@@ -44,14 +44,10 @@ impl<'a, 'b> DeviceInfoProvider for BorrowingDeviceInfoProvider<'a, 'b> {
     }
 }
 
-fn extract_info(room: &str, device: &str, devices: HashMap<&str, &dyn Device>) -> String {
-    let maybe_device = devices.get(device);
+fn extract_info(room: &str, device: &str, devices: HashMap<&str, &dyn Device>) -> Option<String> {
+    let dev = devices.get(device)?;
 
-    if let Some(dev) = maybe_device {
-        format!("Room: {}, Device {}", room, dev.report())
-    } else {
-        String::from("")
-    }
+    Some(format!("Room: {}, Device {}", room, dev.report()))
 }
 
 #[cfg(test)]
@@ -64,7 +60,7 @@ mod test {
         let socket1 = SmartSocket::new(String::from("socket_1"), SmartSocketState::On);
         let info_provider = OwningDeviceInfoProvider { socket: socket1 };
 
-        let report = info_provider.get_info("room", "socket_1");
+        let report = info_provider.get_info("room", "socket_1").unwrap();
         assert!(report.contains("Room: room, Device Socket: socket_1"));
     }
 
@@ -77,8 +73,8 @@ mod test {
             thermo: &thermo,
         };
 
-        let info1 = info_provider.get_info("room", "socket_1");
-        let info2 = info_provider.get_info("room", "thermo");
+        let info1 = info_provider.get_info("room", "socket_1").unwrap();
+        let info2 = info_provider.get_info("room", "thermo").unwrap();
 
         assert!(info1.contains("Room: room, Device Socket: socket_1"));
         assert!(info2.contains("Room: room, Device Thermometer: thermo"));
@@ -90,6 +86,6 @@ mod test {
         let info_provider = OwningDeviceInfoProvider { socket: socket1 };
 
         let info = info_provider.get_info("room", "not_found");
-        assert_eq!(info, "");
+        assert!(info.is_none());
     }
 }

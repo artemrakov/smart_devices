@@ -28,13 +28,13 @@ fn main() {
     house.add_room(room2);
 
     let info_provider_1 = OwningDeviceInfoProvider { socket: socket1 };
-    let report1 = house.create_report(&info_provider_1);
+    let report1 = house.create_report(&info_provider_1).unwrap();
 
     let info_provider_2 = BorrowingDeviceInfoProvider {
         socket: &socket2,
         thermo: &thermo,
     };
-    let report2 = house.create_report(&info_provider_2);
+    let report2 = house.create_report(&info_provider_2).unwrap();
 
     println!("Report #1: {report1}");
     println!("Report #2: {report2}");

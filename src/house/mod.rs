@@ -18,57 +18,65 @@ impl SmartHome {
         }
     }
 
-    pub fn add_room(&mut self, room: Room) {
+    pub fn add_room(&mut self, room: Room) -> Option<bool> {
         if !self.rooms.contains_key(room.get_name()) {
             self.rooms.insert(String::from(room.get_name()), room);
+            return Some(true);
         }
+
+        None
     }
 
     fn get_rooms(&self) -> &HashMap<String, Room> {
         &self.rooms
     }
 
-    fn get_devices(&self, room: &str) -> &HashSet<String> {
-        self.rooms.get(room).unwrap().get_devices()
+    fn get_devices(&self, room: &str) -> Option<&HashSet<String>> {
+        let room = self.rooms.get(room)?;
+        Some(room.get_devices())
     }
 
-    pub fn create_report(&self, provider: &dyn DeviceInfoProvider) -> String {
-        let tuples: Vec<(&str, Vec<String>)> = provider
+    pub fn create_report(&self, provider: &dyn DeviceInfoProvider) -> Result<String, String> {
+        let required_devices: Vec<&str> = provider
             .required_devices()
             .iter()
-            .map(|device| (device.get_name(), Vec::new()))
-            .collect();
-        let mut device_report: HashMap<&str, Vec<String>> = HashMap::from_iter(tuples);
-
-        let room_devices: Vec<(&Room, &str)> = self
-            .get_rooms()
-            .iter()
-            .flat_map(|(_, room)| {
-                room.get_devices()
-                    .iter()
-                    .map(|device| (room, device as &str))
-                    .collect::<Vec<(&Room, &str)>>()
-            })
-            .filter(|(_, device)| device_report.contains_key(device))
+            .map(|device| device.get_name())
             .collect();
 
-        room_devices.iter().for_each(|(room, device)| {
-            let report = device_report.get_mut(device).unwrap();
-            report.push(provider.get_info(room.get_name(), device))
-        });
+        let mut device_report: HashMap<&str, Vec<String>> = required_devices
+            .clone()
+            .into_iter()
+            .map(|device| (device, vec![]))
+            .collect();
+
+        for room in self.get_rooms().values() {
+            for device in room.get_devices() {
+                if required_devices.contains(&device.as_str()) {
+                    let info = provider.get_info(room.get_name(), device);
+
+                    if info.is_none() {
+                        return Err(format!("Do not have info for this device: {}", device));
+                    }
+
+                    let report = device_report.get_mut(&device.as_str()).unwrap();
+                    report.push(info.unwrap())
+                }
+            }
+        }
 
         let mut result = vec![format!("Finding report of {}", &self.description)];
-
-        // check if all required_devices are found
-        device_report.drain().for_each(|(_, mut value)| {
+        for (device, mut value) in device_report.drain() {
             if value.is_empty() {
-                panic!("Device not found")
+                return Err(format!(
+                    "Did not find any devices with this name {}",
+                    device
+                ));
             }
 
             result.append(&mut value)
-        });
+        }
 
-        result.join("\n")
+        Ok(result.join("\n"))
     }
 }
 
@@ -118,7 +126,7 @@ mod test {
         house.add_room(room2);
         let info_provider_1 = OwningDeviceInfoProvider { socket: socket1 };
 
-        let report1 = house.create_report(&info_provider_1);
+        let report1 = house.create_report(&info_provider_1).unwrap();
 
         assert!(report1.contains("Room: Room 1, Device Socket: socket_1 and state is On"));
         assert!(!report1.contains("Room: Room 1, Device Socket: socket_2"));
@@ -127,14 +135,15 @@ mod test {
     }
 
     #[test]
-    #[should_panic(expected = "Device not found")]
     fn device_not_found() {
         let socket1 = SmartSocket::new(String::from("socket_1"), SmartSocketState::On);
         let room1 = Room::new("Room 1".to_string(), HashSet::new());
         let mut house = SmartHome::new("House :)".to_string());
-        house.add_room(room1);
         let info_provider_1 = OwningDeviceInfoProvider { socket: socket1 };
 
-        house.create_report(&info_provider_1);
+        house.add_room(room1);
+        let report = house.create_report(&info_provider_1);
+
+        assert!(report.is_err())
     }
 }
