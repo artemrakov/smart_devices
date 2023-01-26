@@ -1,6 +1,10 @@
 pub mod room;
 
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::HashMap,
+    error::Error,
+    fmt::{Display, Error as FmtError, Formatter},
+};
 
 use crate::provider::DeviceInfoProvider;
 use room::Room;
@@ -8,6 +12,25 @@ use room::Room;
 pub struct SmartHome {
     description: String,
     rooms: HashMap<String, Room>,
+}
+
+#[derive(Debug, Clone)]
+pub enum ReportError {
+    NoInfoProvided(String),
+    NotFoundDevice(String),
+}
+
+impl Error for ReportError {}
+
+impl Display for ReportError {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), FmtError> {
+        match self {
+            Self::NoInfoProvided(device) => {
+                write!(f, "Do not have info for this device: {}", device)
+            }
+            Self::NotFoundDevice(device) => write!(f, "Cannot find this device: {}", device),
+        }
+    }
 }
 
 impl SmartHome {
@@ -31,12 +54,7 @@ impl SmartHome {
         &self.rooms
     }
 
-    fn get_devices(&self, room: &str) -> Option<&HashSet<String>> {
-        let room = self.rooms.get(room)?;
-        Some(room.get_devices())
-    }
-
-    pub fn create_report(&self, provider: &dyn DeviceInfoProvider) -> Result<String, String> {
+    pub fn create_report(&self, provider: &dyn DeviceInfoProvider) -> Result<String, ReportError> {
         let required_devices: Vec<&str> = provider
             .required_devices()
             .iter()
@@ -55,7 +73,7 @@ impl SmartHome {
                     let info = provider.get_info(room.get_name(), device);
 
                     if info.is_none() {
-                        return Err(format!("Do not have info for this device: {}", device));
+                        return Err(ReportError::NoInfoProvided(device.to_string()));
                     }
 
                     let report = device_report.get_mut(&device.as_str()).unwrap();
@@ -67,10 +85,7 @@ impl SmartHome {
         let mut result = vec![format!("Finding report of {}", &self.description)];
         for (device, mut value) in device_report.drain() {
             if value.is_empty() {
-                return Err(format!(
-                    "Did not find any devices with this name {}",
-                    device
-                ));
+                return Err(ReportError::NotFoundDevice(device.to_string()));
             }
 
             result.append(&mut value)
@@ -87,6 +102,7 @@ mod test {
         device::{SmartSocket, SmartSocketState},
         provider::OwningDeviceInfoProvider,
     };
+    use std::collections::HashSet;
 
     #[test]
     fn can_add_room() {
@@ -144,6 +160,6 @@ mod test {
         house.add_room(room1);
         let report = house.create_report(&info_provider_1);
 
-        assert!(report.is_err())
+        assert!(report.is_err());
     }
 }

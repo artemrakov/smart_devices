@@ -15,6 +15,7 @@ impl Room {
         self.name.as_ref()
     }
 
+    #[cfg(test)]
     pub fn add_device(&mut self, device: String) -> Option<bool> {
         if !self.devices.contains(&device) {
             self.devices.insert(device);
